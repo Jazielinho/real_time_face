@@ -16,7 +16,7 @@ cryptography==43.0.1
 cycler==0.12.1
 cmake
 decorator==4.4.2
-dlib==19.24.6
+https://github.com/davisking/dlib/releases/download/v19.24/dlib-19.24.0-cp39-cp39-manylinux1_x86_64.whl
 dnspython==2.7.0
 facenet-pytorch==2.6.0
 fer==22.5.1
