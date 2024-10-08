@@ -14,8 +14,8 @@ click==8.1.7
 contourpy==1.3.0
 cryptography==43.0.1
 cycler==0.12.1
-cmake
-dlib==19.22.0
+cmake>=3.24.0
+dlib==19.24.0
 decorator==4.4.2
 dnspython==2.7.0
 facenet-pytorch==2.6.0
