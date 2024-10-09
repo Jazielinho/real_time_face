@@ -7,7 +7,6 @@ import queue
 import warnings
 import av
 
-
 warnings.filterwarnings("ignore")
 
 st.markdown("""
@@ -43,7 +42,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
 if 'fast_statistics' not in st.session_state:
     print("Creating fast statistics")
     st.session_state['fast_statistics'] = FastStatistics(use_cv2=False)
@@ -53,12 +51,10 @@ if 'seconds' not in st.session_state:
     st.session_state['seconds'] = 0
 seconds = st.session_state['seconds']
 
-
 total_faces_placeholder = st.empty()
 
 st.title("Estadísticas en tiempo real")
 st.markdown("<hr style='border:1px solid #333;'>", unsafe_allow_html=True)
-
 
 col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
 
@@ -87,7 +83,6 @@ gaze_placeholder = st.empty()
 
 fast_statistics_queue = queue.Queue()
 
-
 class VideoProcessor(VideoProcessorBase):
     def process(self, frame):
         try:
@@ -102,14 +97,12 @@ class VideoProcessor(VideoProcessorBase):
             st.error(f"Error en el procesamiento de video: {e}")
             return frame
 
-
 webrtc_ctx = webrtc_streamer(
     key="example",
     mode=WebRtcMode.SENDRECV,
     video_processor_factory=VideoProcessor,
     async_processing=True,
 )
-
 
 def plot_last_frame(data):
     SENTIMENT_COLUMNS = [
@@ -139,7 +132,6 @@ def plot_last_frame(data):
     last_gaze = data[data['frame_id'] == last_frame_id]['is_looking'].mean()
     gaze_placeholder.metric("👀 Mirada al centro", value=f"{last_gaze:.2f}")
 
-
 def customize_plot_layout(fig):
     fig.update_layout(
         margin=dict(l=40, r=40, t=60, b=40),
@@ -152,41 +144,41 @@ def customize_plot_layout(fig):
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
     )
 
-
 @st.fragment(run_every=5)
 def plot_statistics():
     total_people_chart_placeholder = st.empty()
     emotion_chart_placeholder = st.empty()
     gaze_chart_placeholder = st.empty()
 
-    fast_statistics = fast_statistics_queue.get()
-    data = fast_statistics.get_statistics()
-
-    if data is not None:
-        plot_last_frame(data)
-
-        df_people = data[['second', 'frame_id']].groupby(['second', 'frame_id']).size().reset_index(name='count')
-        df_people = df_people.groupby('second')['count'].mean().reset_index()
-        fig_people = px.line(df_people, x='second', y='count', title='Personas en el tiempo')
-        customize_plot_layout(fig_people)
-        total_people_chart_placeholder.plotly_chart(fig_people, use_container_width=True)
-
-        emotion_cols = [col for col in data.columns if 'emotion_' in col]
-        if emotion_cols:
-            df_emotions = data[['second'] + emotion_cols].groupby('second').mean().reset_index()
-            fig_emotions = px.bar(df_emotions, x='second', y=emotion_cols, title='Emociones en el tiempo')
-            customize_plot_layout(fig_emotions)
-            emotion_chart_placeholder.plotly_chart(fig_emotions, use_container_width=True)
-
-        if 'is_looking' in data.columns:
-            df_gaze = data[['second', 'is_looking']].groupby('second').mean().reset_index()
-            fig_gaze = px.line(df_gaze, x='second', y='is_looking', title='Mirada al centro en el tiempo')
-            customize_plot_layout(fig_gaze)
-            gaze_chart_placeholder.plotly_chart(fig_gaze, use_container_width=True)
-
-
-if webrtc_ctx.state.playing:
     try:
-        plot_statistics()
+        fast_statistics = fast_statistics_queue.get_nowait()
+        data = fast_statistics.get_statistics()
+
+        if data is not None:
+            plot_last_frame(data)
+
+            df_people = data[['second', 'frame_id']].groupby(['second', 'frame_id']).size().reset_index(name='count')
+            df_people = df_people.groupby('second')['count'].mean().reset_index()
+            fig_people = px.line(df_people, x='second', y='count', title='Personas en el tiempo')
+            customize_plot_layout(fig_people)
+            total_people_chart_placeholder.plotly_chart(fig_people, use_container_width=True)
+
+            emotion_cols = [col for col in data.columns if 'emotion_' in col]
+            if emotion_cols:
+                df_emotions = data[['second'] + emotion_cols].groupby('second').mean().reset_index()
+                fig_emotions = px.bar(df_emotions, x='second', y=emotion_cols, title='Emociones en el tiempo')
+                customize_plot_layout(fig_emotions)
+                emotion_chart_placeholder.plotly_chart(fig_emotions, use_container_width=True)
+
+            if 'is_looking' in data.columns:
+                df_gaze = data[['second', 'is_looking']].groupby('second').mean().reset_index()
+                fig_gaze = px.line(df_gaze, x='second', y='is_looking', title='Mirada al centro en el tiempo')
+                customize_plot_layout(fig_gaze)
+                gaze_chart_placeholder.plotly_chart(fig_gaze, use_container_width=True)
+    except queue.Empty:
+        pass
     except Exception as e:
         st.error(f"Error al actualizar las estadísticas: {e}")
+
+if webrtc_ctx.state.playing:
+    plot_statistics()
