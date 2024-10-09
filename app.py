@@ -1,8 +1,7 @@
-
 import streamlit as st
 import cv2
 import plotly.express as px
-from streamlit_webrtc import webrtc_streamer
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 from models.fast_statistics import FastStatistics
 import queue
 import warnings
@@ -86,21 +85,30 @@ with col7:
 
 gaze_placeholder = st.empty()
 
-
-fast_statistics_queque = queue.Queue()
-
-
-def video_frame_callback(frame):
-    img = frame.to_ndarray(format="bgr24")
-    real_time_statistics = fast_statistics.update(img)
-    fast_statistics_queque.put(fast_statistics)
-    for _real_time_statistic in real_time_statistics:
-        x, y, w, h = _real_time_statistic['bbox']
-        img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    return av.VideoFrame.from_ndarray(img, format="bgr24")
+fast_statistics_queue = queue.Queue()
 
 
-webrtc_ctx = webrtc_streamer(key="example", video_frame_callback=video_frame_callback, async_processing=True)
+class VideoProcessor(VideoProcessorBase):
+    def process(self, frame):
+        try:
+            img = frame.to_ndarray(format="bgr24")
+            real_time_statistics = fast_statistics.update(img)
+            fast_statistics_queue.put(fast_statistics)
+            for _real_time_statistic in real_time_statistics:
+                x, y, w, h = _real_time_statistic['bbox']
+                img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            return av.VideoFrame.from_ndarray(img, format="bgr24")
+        except Exception as e:
+            st.error(f"Error en el procesamiento de video: {e}")
+            return frame
+
+
+webrtc_ctx = webrtc_streamer(
+    key="example",
+    mode=WebRtcMode.SENDRECV,
+    video_processor_factory=VideoProcessor,
+    async_processing=True,
+)
 
 
 def plot_last_frame(data):
@@ -151,8 +159,7 @@ def plot_statistics():
     emotion_chart_placeholder = st.empty()
     gaze_chart_placeholder = st.empty()
 
-    # print("Updating statistics Plots 1000")
-    fast_statistics = fast_statistics_queque.get()
+    fast_statistics = fast_statistics_queue.get()
     data = fast_statistics.get_statistics()
 
     if data is not None:
@@ -182,4 +189,4 @@ if webrtc_ctx.state.playing:
     try:
         plot_statistics()
     except Exception as e:
-        print("No entiendo el error", e)
+        st.error(f"Error al actualizar las estadísticas: {e}")

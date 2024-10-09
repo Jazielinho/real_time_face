@@ -1,6 +1,6 @@
 absl-py==2.1.0
-aioice==0.9.0
-aiortc==1.9.0
+aioice==0.8.0
+aiortc==1.4.4
 altair==5.4.1
 astunparse==1.6.3
 attrs==24.2.0
