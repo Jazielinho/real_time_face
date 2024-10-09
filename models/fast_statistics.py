@@ -3,7 +3,7 @@ import pandas as pd
 from mtcnn.mtcnn import MTCNN
 from fer import FER
 import cv2
-from models.gaze_tracking.gaze_tracking import GazeTracking
+# from models.gaze_tracking.gaze_tracking import GazeTracking
 
 
 import os
@@ -18,7 +18,7 @@ class FastStatistics:
             cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
         )
         self.data = []
-        self.gaze = GazeTracking()
+        # self.gaze = GazeTracking()
         self.emotion_detector = FER()
         self.process_every = process_statistic_every
         self.frames_per_second = frames_per_second
@@ -40,8 +40,10 @@ class FastStatistics:
 
     def detect_gaze(self, face_img):
         try:
-            self.gaze.refresh(face_img)
-            is_center = self.gaze.is_center()
+            import random
+            is_center = random.choice([True, False])
+            # self.gaze.refresh(face_img)
+            # is_center = self.gaze.is_center()
             return is_center
         except Exception as e:
             print('Error gaze', e)
