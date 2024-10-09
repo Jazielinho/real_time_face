@@ -100,7 +100,7 @@ def video_frame_callback(frame):
     return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 
-webrtc_ctx = webrtc_streamer(key="example", video_frame_callback=video_frame_callback)
+webrtc_ctx = webrtc_streamer(key="example", video_frame_callback=video_frame_callback, async_processing=True)
 
 
 def plot_last_frame(data):
