@@ -43,7 +43,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if 'fast_statistics' not in st.session_state:
-    print("Creating fast statistics")
     st.session_state['fast_statistics'] = FastStatistics(use_cv2=False)
 fast_statistics = st.session_state['fast_statistics']
 
